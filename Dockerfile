@@ -74,9 +74,6 @@ RUN apk add --no-cache shadow
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
-# Copy tag
-COPY .tag /.tag
-
 # Defina o entrypoint para o container
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 
