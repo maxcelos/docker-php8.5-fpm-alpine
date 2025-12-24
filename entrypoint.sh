@@ -79,8 +79,8 @@ if [ -z "$EFFECTIVE_OWNER_UID" ] || [ -z "$EFFECTIVE_OWNER_GID" ]; then
 fi
 
 echo "Setting ownership for directories to ${EFFECTIVE_OWNER_UID}:${EFFECTIVE_OWNER_GID}"
-chown -R "${EFFECTIVE_OWNER_UID}":"${EFFECTIVE_OWNER_GID}" /var/www/vhost/lscore/storage || true
-chown -R "${EFFECTIVE_OWNER_UID}":"${EFFECTIVE_OWNER_GID}" /var/www/vhost/lscore/bootstrap/cache || true
+chown -R "${EFFECTIVE_OWNER_UID}":"${EFFECTIVE_OWNER_GID}" /var/www/vhost/app/storage || true
+chown -R "${EFFECTIVE_OWNER_UID}":"${EFFECTIVE_OWNER_GID}" /var/www/vhost/app/bootstrap/cache || true
 chown -R "${EFFECTIVE_OWNER_UID}":"${EFFECTIVE_OWNER_GID}" /composer || true
 chown -R "${EFFECTIVE_OWNER_UID}":"${EFFECTIVE_OWNER_GID}" /.npm || true
 

@@ -59,7 +59,7 @@ COPY config/php.ini /usr/local/etc/php/conf.d/php.ini
 COPY config/opcache.ini /usr/local/etc/php/conf.d/opcache.ini
 
 # Crie os diretórios, mas NÃO defina chown aqui. Isso será feito no entrypoint.
-RUN mkdir -p /composer /var/www/vhost/lscore /root/.npm
+RUN mkdir -p /composer /var/www/vhost/app /root/.npm
 
 # Install Node.js and npm
 RUN apk add --no-cache nodejs npm
