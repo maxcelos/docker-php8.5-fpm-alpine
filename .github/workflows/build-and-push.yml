@@ -50,17 +50,15 @@ jobs:
             type=semver,pattern={{version}}-${{ env.PHP_VARIANT }}
 
             # The "moving pointer" - always points to latest build of this variant
-            # Use this in your docker-compose or deployments
+            # This is the recommended tag for docker-compose and deployments
             type=raw,value=${{ env.PHP_VARIANT }}
-
-            # Optional: Update 'latest' only for this specific variant
-            type=raw,value=latest
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./Dockerfile
+          platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -72,6 +70,7 @@ jobs:
           echo "## Docker Image Published :rocket:" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Version:** ${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Platforms:** linux/amd64, linux/arm64" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Tags:**" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY

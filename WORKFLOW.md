@@ -21,11 +21,10 @@ This workflow separates **repository versioning** from **Docker image tags**:
 #### Docker Image Tags
 When you push a tag like `v1.0.0`, the workflow creates these Docker tags:
 
-- `v1.0.0-8.5-fpm-alpine` - Specific snapshot of your v1.0.0 changes
+- `v1.0.0-8.5-fpm-alpine` - Immutable snapshot of your v1.0.0 changes
 - `8.5-fpm-alpine` - Moving pointer, always updates to latest build
-- `latest` - Also points to the most recent build
 
-This approach mirrors how official PHP images work (e.g., `php:8.5-fpm-alpine`)
+**Note:** We intentionally don't use a `latest` tag to avoid conflicts when you create repositories for other PHP versions (8.4, 9.0, etc.). The variant tag (`8.5-fpm-alpine`) serves as the "latest" for this specific PHP version.
 
 ### Example: Releasing a New Version
 
@@ -61,11 +60,10 @@ git push origin v1.0.0
 
 This will automatically:
 1. Trigger the GitHub Actions workflow
-2. Build the Docker image from the Dockerfile
+2. Build the Docker image for both AMD64 and ARM64
 3. Push to `ghcr.io/maxcelos/php` with these tags:
-   - `v1.0.0-8.5-fpm-alpine` (snapshot)
-   - `8.5-fpm-alpine` (moving pointer)
-   - `latest`
+   - `v1.0.0-8.5-fpm-alpine` (immutable snapshot)
+   - `8.5-fpm-alpine` (moving pointer, always latest)
 
 ### Viewing Build Status
 
@@ -82,10 +80,7 @@ After the workflow completes, you can pull your image:
 # RECOMMENDED: Use the PHP variant tag (always gets latest build)
 docker pull ghcr.io/maxcelos/php:8.5-fpm-alpine
 
-# Or pull latest (same as above)
-docker pull ghcr.io/maxcelos/php:latest
-
-# Or pull a specific snapshot of your changes
+# Or pull a specific snapshot for reproducible deployments
 docker pull ghcr.io/maxcelos/php:v1.0.0-8.5-fpm-alpine
 ```
 
@@ -140,9 +135,8 @@ git commit -m "Add Redis extension"
 git push --follow-tags
 
 # GitHub Actions will now build and push:
-# - ghcr.io/maxcelos/php:v1.1.0-8.5-fpm-alpine
+# - ghcr.io/maxcelos/php:v1.1.0-8.5-fpm-alpine (snapshot)
 # - ghcr.io/maxcelos/php:8.5-fpm-alpine (updated)
-# - ghcr.io/maxcelos/php:latest (updated)
 ```
 
 ### Undo a Version Bump (Before Pushing)
@@ -183,7 +177,7 @@ git push origin v1.0.0
 
 ### Performance Optimizations
 - **Build caching**: Uses GitHub Actions cache to speed up builds
-- **Multi-architecture support**: Can be extended to build for AMD64 and ARM64
+- **Multi-architecture support**: Builds for both AMD64 and ARM64 (Apple Silicon)
 - **Parallel builds**: Builds happen in GitHub's infrastructure
 
 ### Security
@@ -207,21 +201,37 @@ git push origin v1.0.0
 - Make sure the package is public (Settings > Packages)
 - Or authenticate: `echo $GITHUB_TOKEN | docker login ghcr.io -u USERNAME --password-stdin`
 
-## Advanced Configuration
+## Multi-Version Strategy
 
-### Building for Multiple Platforms
+This repository is specifically for **PHP 8.5**. If you want to support other PHP versions:
 
-To build for both AMD64 and ARM64, modify the workflow:
+### Recommended Approach: Separate Repositories
 
-```yaml
-- name: Build and push Docker image
-  uses: docker/build-push-action@v5
-  with:
-    context: .
-    platforms: linux/amd64,linux/arm64
-    push: true
-    tags: ${{ steps.meta.outputs.tags }}
+Create a separate repository for each PHP major version:
+
 ```
+docker-php-8.4-fpm-alpine  → ghcr.io/maxcelos/php:8.4-fpm-alpine
+docker-php-8.5-fpm-alpine  → ghcr.io/maxcelos/php:8.5-fpm-alpine
+docker-php-9.0-fpm-alpine  → ghcr.io/maxcelos/php:9.0-fpm-alpine
+```
+
+**Benefits:**
+- Clean separation of concerns
+- Independent version tracking (each repo has its own v1.0.0, v1.0.1, etc.)
+- No tag conflicts
+- Easy to deprecate old versions
+- Clear ownership and maintenance
+
+**In docker-compose.yml:**
+```yaml
+services:
+  app:
+    image: ghcr.io/maxcelos/php:8.5-fpm-alpine  # Explicit PHP version
+```
+
+This avoids the ambiguity of a single `latest` tag and makes it clear which PHP version your application uses.
+
+## Advanced Configuration
 
 ### Custom Tag Patterns
 
