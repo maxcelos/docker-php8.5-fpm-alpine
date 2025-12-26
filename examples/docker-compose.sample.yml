@@ -1,0 +1,194 @@
+services:
+  # PHP-FPM Service
+  php:
+    image: ghcr.io/maxcelos/php:8.5-fpm-alpine
+    container_name: myapp_php
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      # Mount your application code
+      - ./:/var/www/html
+
+      # Optional: Override PHP configuration
+      # Uncomment to customize php.ini settings
+      # - ./docker/config/php.ini:/usr/local/etc/php/conf.d/zz-custom.ini:ro
+
+      # Optional: Override OPcache configuration
+      # Uncomment to customize OPcache settings
+      # - ./docker/config/opcache.ini:/usr/local/etc/php/conf.d/zz-opcache.ini:ro
+
+      # Optional: Custom PHP-FPM pool configuration
+      # Uncomment to customize PHP-FPM settings
+      # - ./docker/config/www.conf:/usr/local/etc/php-fpm.d/zz-custom.conf:ro
+    environment:
+      # Application environment
+      APP_ENV: local
+      APP_DEBUG: true
+
+      # Database configuration
+      DB_CONNECTION: mysql
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: myapp
+      DB_USERNAME: myapp
+      DB_PASSWORD: secret
+
+      # Cache configuration
+      CACHE_STORE: redis
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+
+      # Session configuration
+      SESSION_DRIVER: redis
+
+      # Mail configuration (using Mailpit for local development)
+      MAIL_HOST: mailpit
+      MAIL_PORT: 1025
+      MAIL_ENCRYPTION: null
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - myapp
+
+  # Nginx Service
+  nginx:
+    image: nginx:alpine
+    container_name: myapp_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      # Mount application code (read-only for security)
+      - ./:/var/www/html:ro
+
+      # Nginx configuration
+      # Create these files in ./docker/nginx/
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d:ro
+
+      # Optional: SSL certificates
+      # - ./docker/certs:/etc/nginx/ssl:ro
+    depends_on:
+      - php
+    networks:
+      - myapp
+
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: myapp_mysql
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: myapp
+      MYSQL_USER: myapp
+      MYSQL_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+      # Optional: Custom MySQL configuration
+      # - ./docker/mysql/my.cnf:/etc/mysql/conf.d/custom.cnf:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - myapp
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: myapp_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    networks:
+      - myapp
+
+  # Mailpit (Email testing tool)
+  mailpit:
+    image: axllent/mailpit
+    container_name: myapp_mailpit
+    restart: unless-stopped
+    ports:
+      - "8025:8025"  # Web UI
+      - "1025:1025"  # SMTP
+    environment:
+      MP_MAX_MESSAGES: 5000
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+    networks:
+      - myapp
+
+  # Optional: Queue Worker
+  # Uncomment to run Laravel queue workers
+  # queue:
+  #   image: ghcr.io/maxcelos/php:8.5-fpm-alpine
+  #   container_name: myapp_queue
+  #   restart: unless-stopped
+  #   working_dir: /var/www/html
+  #   command: php artisan queue:work --tries=3 --timeout=90
+  #   volumes:
+  #     - ./:/var/www/html
+  #   environment:
+  #     # Use same environment as PHP service
+  #     APP_ENV: local
+  #     DB_CONNECTION: mysql
+  #     DB_HOST: mysql
+  #     DB_PORT: 3306
+  #     DB_DATABASE: myapp
+  #     DB_USERNAME: myapp
+  #     DB_PASSWORD: secret
+  #     CACHE_STORE: redis
+  #     REDIS_HOST: redis
+  #   depends_on:
+  #     - mysql
+  #     - redis
+  #   networks:
+  #     - myapp
+
+  # Optional: Scheduler
+  # Uncomment to run Laravel task scheduler
+  # scheduler:
+  #   image: ghcr.io/maxcelos/php:8.5-fpm-alpine
+  #   container_name: myapp_scheduler
+  #   restart: unless-stopped
+  #   working_dir: /var/www/html
+  #   command: sh -c "while true; do php artisan schedule:run --verbose --no-interaction & sleep 60; done"
+  #   volumes:
+  #     - ./:/var/www/html
+  #   environment:
+  #     # Use same environment as PHP service
+  #     APP_ENV: local
+  #     DB_CONNECTION: mysql
+  #     DB_HOST: mysql
+  #   depends_on:
+  #     - mysql
+  #     - redis
+  #   networks:
+  #     - myapp
+
+volumes:
+  mysql_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  myapp:
+    driver: bridge

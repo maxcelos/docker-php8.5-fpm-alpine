@@ -37,6 +37,14 @@ RUN apk add --no-cache --virtual .build-deps \
     bison \
     linux-headers
 
+# Install necessary build tools and headers for PHP extensions (autoconf, build-base, linux-headers)
+# and then clean up the apk cache to keep the image size small.
+RUN apk add --no-cache autoconf build-base linux-headers \
+    && pecl install redis \
+    && docker-php-ext-enable redis \
+    && apk del autoconf build-base linux-headers
+
+
 # Install PHP extensions one by one to avoid race conditions
 RUN docker-php-ext-install pdo_pgsql
 RUN docker-php-ext-install pdo_mysql
@@ -45,7 +53,6 @@ RUN docker-php-ext-install mbstring
 RUN docker-php-ext-install exif
 RUN docker-php-ext-install zip
 RUN docker-php-ext-install pcntl
-# Note: opcache and redis are built-in to PHP 8.5 and enabled by default
 
 # Clean up build dependencies
 RUN apk del .build-deps

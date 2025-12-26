@@ -1,13 +1,54 @@
-# PHP 8.5
+# PHP 8.5 FPM Alpine
 
-Ready to use PHP 8.5 based on alpine and setup for Laravel apps.
+Production-ready PHP 8.5 image based on Alpine Linux, optimized for Laravel applications.
+
+## Features
+
+- PHP 8.5 FPM on Alpine Linux
+- Pre-installed extensions: PDO (MySQL, PostgreSQL), Redis, BCMath, MBString, EXIF, ZIP, PCNTL
+- Composer 2.2
+- Node.js and npm
+- Production-optimized PHP and OPcache configurations
+- Automatic file permission handling
+- Ready for Laravel/Symfony applications
 
 ## Quick Start
 
+### Pull the Image
+
 ```bash
-# Pull the image
 docker pull ghcr.io/maxcelos/php:8.5-fpm-alpine
 ```
+
+### Using with Docker Compose
+
+```bash
+# Copy the sample configuration
+cp docker-compose.sample.yml docker-compose.yml
+
+# Start your services
+docker-compose up -d
+```
+
+### Simple Docker Run
+
+```bash
+docker run -d \
+  --name myapp_php \
+  -v $(pwd):/var/www/html \
+  ghcr.io/maxcelos/php:8.5-fpm-alpine
+```
+
+## Documentation
+
+- [USAGE.md](docs/USAGE.md) - Complete usage guide including:
+  - Configuration customization (PHP, OPcache, PHP-FPM)
+  - Docker Compose examples
+  - Environment variables
+  - Common use cases
+  - Troubleshooting
+- [docker-compose.sample.yml](examples/docker-compose.sample.yml) - Full-featured docker-compose example
+- [WORKFLOW.md](docs/WORKFLOW.md) - Development and release workflow
 
 ## Development
 
@@ -48,10 +89,4 @@ docker run --rm ghcr.io/maxcelos/php:test php -v
 git push --follow-tags
 ```
 
-## Documentation
-
-See [WORKFLOW.md](WORKFLOW.md) for detailed documentation on:
-- Automated version management
-- GitHub Actions workflow
-- Tagging strategy
-- Troubleshooting
+See [WORKFLOW.md](docs/WORKFLOW.md) for detailed documentation on the automated version management and release process.
